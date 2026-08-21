@@ -98,7 +98,7 @@ FYNE_UI_DIR   = gui_interface/fyne-ui
 FYNE_UI_BIN   = mercury-ui.exe
 MINGW_GO_CC   = x86_64-w64-mingw32-gcc
 
-.PHONY: all install internal_deps utils clean doxygen doxygen-clean windows windows-zip windows-installer-signed windows-installer-stage check-installer-names fyne-ui fyne-ui-macos fyne-ui-macos-dmg macos-universal fyne-ui-macos-universal fyne-ui-macos-universal-dmg sign-macos-bin macos-notarize-dmg fyne-ui-windows windows-installer test integration-test FORCE
+.PHONY: all install internal_deps utils clean doxygen doxygen-clean windows windows-zip windows-installer-signed windows-installer-stage check-installer-names fyne-ui fyne-ui-macos fyne-ui-macos-dmg macos-universal fyne-ui-macos-universal fyne-ui-macos-universal-dmg sign-macos-bin macos-notarize-dmg fyne-ui-windows windows-installer test integration-test integration-hardware-test FORCE
 
 prefix ?= /usr
 bindir ?= $(prefix)/bin
@@ -679,3 +679,8 @@ test:
 
 integration-test:
 	cd tests/integration && go test -v ./...
+
+# Explicitly keys the radios configured by tests/integration/station1.ini and
+# station2.ini. The hardware build tag keeps this out of integration-test.
+integration-hardware-test:
+	cd tests/integration && go test -tags hardware -run '^TestMercuryHardwareE2E$$' -v -timeout 12m

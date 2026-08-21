@@ -1,0 +1,23 @@
+; Station 1 example: IC-705 USB audio and Hamlib CAT/PTT.
+[main]
+sound_system = wasapi
+input_device = <IC-705 capture device ID from mercury -z>
+output_device = <IC-705 playback device ID from mercury -z>
+capture_channel = left
+ui_enabled = false
+waterfall_enabled = false
+
+[ptt]
+method = hamlib
+device = <IC-705 CAT port, for example COM6>
+hamlib_model = 3085
+hamlib_serial_speed = 0
+hamlib_log_level = 2
+
+[audio]
+tx_gain_db = 0.0
+tx_delay_ms = 100
+
+[channel]
+busy_detect = false
+

@@ -13,7 +13,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -136,36 +135,6 @@ func runSingleProcessControlTest(t *testing.T, audioArgs []string, backendName s
 	}
 }
 
-func createFIFOAudioPaths(t *testing.T) (rxPath, txPath string, cleanup func()) {
-	t.Helper()
-	dir := t.TempDir()
-	rxPath = filepath.Join(dir, "rx.s32le.fifo")
-	txPath = filepath.Join(dir, "tx.s32le.fifo")
-	for _, path := range []string{rxPath, txPath} {
-		if err := syscall.Mkfifo(path, 0600); err != nil {
-			t.Fatalf("mkfifo %s: %v", path, err)
-		}
-	}
-
-	var keepers []*os.File
-	for _, path := range []string{rxPath, txPath} {
-		fd, err := syscall.Open(path, syscall.O_RDWR|syscall.O_NONBLOCK, 0600)
-		if err != nil {
-			for _, f := range keepers {
-				_ = f.Close()
-			}
-			t.Fatalf("open FIFO keeper %s: %v", path, err)
-		}
-		keepers = append(keepers, os.NewFile(uintptr(fd), path))
-	}
-
-	return rxPath, txPath, func() {
-		for _, f := range keepers {
-			_ = f.Close()
-		}
-	}
-}
-
 type processWait struct {
 	done chan struct{}
 	err  error
@@ -240,6 +209,31 @@ func tempLogFiles(t *testing.T) (*os.File, *os.File) {
 		t.Fatal(err)
 	}
 	stderr, err := os.Create(filepath.Join(dir, "mercury.stderr.log"))
+	if err != nil {
+		_ = stdout.Close()
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = stdout.Close()
+		_ = stderr.Close()
+	})
+	return stdout, stderr
+}
+
+func tempLogFilesNamed(t *testing.T, name string) (*os.File, *os.File) {
+	t.Helper()
+	dir := t.TempDir()
+	if d := os.Getenv("MERCURY_TEST_LOGDIR"); d != "" {
+		dir = d // persist Mercury logs for hardware/OTA debugging
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	stdout, err := os.Create(filepath.Join(dir, name+".stdout.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	stderr, err := os.Create(filepath.Join(dir, name+".stderr.log"))
 	if err != nil {
 		_ = stdout.Close()
 		t.Fatal(err)

@@ -114,3 +114,47 @@ path to prove before adding channel impairments.
 Do not vendor or wire `ch.c` as part of the first harness PR. The first useful
 test can use a no-impairment bridge; once process orchestration is stable, add
 an optional channel-simulator process or library wrapper.
+
+## Two-radio hardware test (station1 and station2)
+
+`TestMercuryHardwareE2E` adapts the simulated ARQ transfer to two real radios
+attached to one computer. It starts two Mercury processes, connects from
+station1 to station2, verifies a short payload in each direction,
+and disconnects. Its `hardware` Go build tag excludes it from normal
+`integration-test` runs. Running `make integration-hardware-test` explicitly
+selects it and keys both transmitters.
+
+Before running it:
+
+1. Put both radios on the same frequency and compatible data/USB audio mode.
+   Use a legal test frequency, minimum practical power, and preferably dummy
+   loads plus suitable attenuation for a bench test. Disable VOX on the HT.
+2. Run `mercury -z` and copy the two example configurations in this directory:
+   `station1.ini.example` and `station2.ini.example`. Replace the audio IDs and
+   COM ports. Confirm the IC-705 Hamlib model with
+   `mercury -K` (3085 is the expected Hamlib ID).
+3. Confirm each endpoint independently with Mercury's `-t`/`-r` modes and set
+   audio levels without overdriving either radio. The example HT keying delay
+   is intentionally conservative and can be reduced after the link is stable.
+4. Stop any program holding either audio or serial device, then run from the
+   repository root:
+
+```sh
+make integration-hardware-test
+```
+
+The optional `MERCURY_HW_STATION1_CALL` and `MERCURY_HW_STATION2_CALL` variables
+change the default test identifiers (`STATION1` and `STATION2`).
+`MERCURY_TEST_LOGDIR` optionally selects a persistent log directory; without
+it, logs use Go's temporary test directory. The test uses `station1.ini` and
+`station2.ini` from this directory by default. Set
+`MERCURY_HW_STATION1_CONFIG` or `MERCURY_HW_STATION2_CONFIG` only to override
+those paths. Environment-variable assignment syntax is intentionally left to
+the invoking shell.
+
+If GNU Make is unavailable, the cross-platform Go command is:
+
+```sh
+cd tests/integration
+go test -tags hardware -run '^TestMercuryHardwareE2E$' -v -timeout 12m
+```

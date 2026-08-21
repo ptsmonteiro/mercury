@@ -1,0 +1,20 @@
+; Station 2 example: HT through DigiRig USB audio and serial RTS PTT.
+[main]
+sound_system = wasapi
+input_device = <DigiRig capture device ID from mercury -z>
+output_device = <DigiRig playback device ID from mercury -z>
+capture_channel = left
+ui_enabled = false
+waterfall_enabled = false
+
+[ptt]
+method = serial_rts
+device = <DigiRig serial port, for example COM5>
+
+[audio]
+tx_gain_db = 0.0
+tx_delay_ms = 250
+
+[channel]
+busy_detect = false
+
